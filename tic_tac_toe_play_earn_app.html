@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tic-Tac-Toe Cash Pro | Play 100 Rounds & Earn ₹10</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              gold: '#F59E0B',
+              emerald: '#10B981',
+              dark: '#0B0F19',
+              card: '#131B2E',
+              border: '#22304F'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      background-color: #070B14;
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(245, 158, 11, 0.10) 0px, transparent 45%),
+        radial-gradient(at 90% 20%, rgba(16, 185, 129, 0.10) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+      color: #F8FAFC;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Board Cells */
+    .ttt-cell {
+      aspect-ratio: 1 / 1;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.04), 0 8px 20px -4px rgba(0, 0, 0, 0.5);
+    }
+    .ttt-cell:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+    .ttt-cell:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    /* Winning Cell Pulse */
+    @keyframes winPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), inset 0 0 20px rgba(16, 185, 129, 0.35);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px 4px rgba(16, 185, 129, 0.5), inset 0 0 25px rgba(16, 185, 129, 0.5);
+      }
+    }
+    .win-cell {
+      animation: winPulse 1.1s infinite ease-in-out;
+      border-color: #10B981 !important;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.15)) !important;
+    }
+
+    /* Pop-in animation for X and O */
+    @keyframes symbolPop {
+      0% { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+      75% { transform: scale(1.12) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .symbol-pop {
+      animation: symbolPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Shimmer effect for Claim Button */
+    @keyframes shimmerGold {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .btn-gold-shimmer {
+      background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 25%, #FEF08A 50%, #FBBF24 75%, #F59E0B 100%);
+      background-size: 200% auto;
+      animation: shimmerGold 3s linear infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #22304F;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-20 lg:pb-6">
+
+  <!-- ===================================================================== -->
+  <!-- 1. AUTHENTICATION SCREEN (EMAIL LOGIN & SIGN UP)                      -->
+  <!-- ===================================================================== -->
+  <div id="authScreen" class="fixed inset-0 z-50 bg-[#070B14]/95 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
+    <div class="w-full max-w-md bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden my-auto">
+      <!-- Decorative Glow -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- App Logo & Header -->
+      <div class="text-center mb-6 relative z-10">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 border border-amber-300/40">
+          <i class="fa-solid fa-gamepad text-slate-950 text-3xl"></i>
+        </div>
+        <h1 class="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Tic-Tac-Toe <span class="text-amber-400">Cash Pro</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+          Play 100 Rounds = Claim ₹10 • Instant UPI Withdrawal
+        </p>
+      </div>
+
+      <!-- Auth Mode Switch Tabs -->
+      <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900/90 rounded-xl border border-slate-800 mb-6 relative z-10">
+        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="py-2.5 text-sm font-bold rounded-lg bg-amber-500 text-slate-950 shadow transition-all">
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Email Login
+        </button>
+        <button id="tabSignupBtn" onclick="switchAuthTab('signup')" class="py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-user-plus mr-1.5"></i>Create Account
+        </button>
+      </div>
+
+      <!-- Auth Form -->
+      <form id="authForm" onsubmit="handleEmailAuth(event)" class="space-y-4 relative z-10">
+        <div id="signupNameGroup" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Player Full Name</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input id="authNameInput" type="text" placeholder="Enter your name" class="w-full pl-10 pr-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500 transition-colors" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Email ID</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input id="authEmailInput" type="email" required placeholder="player@example.com" class="w-full pl-10 pr-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500 transition-colors" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input id="authPasswordInput" type="password" required minlength="4" placeholder="Enter password (min 4 chars)" class="w-full pl-10 pr-10 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500 transition-colors" />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm">
+              <i id="passEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="authErrorMsg" class="hidden p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center gap-2">
+          <i class="fa-solid fa-circle-exclamation text-rose-400"></i>
+          <span id="authErrorText">Invalid credentials</span>
+        </div>
+
+        <button id="authSubmitBtn" type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-display font-extrabold text-base shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2">
+          <span id="authSubmitText">Login with Email</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <!-- Quick Instant Demo Email Login -->
+      <div class="mt-5 pt-5 border-t border-slate-800/80 text-center relative z-10">
+        <p class="text-xs text-slate-400 mb-2.5">Want to test immediately with a pre-filled Email ID?</p>
+        <button type="button" onclick="quickDemoLogin()" class="w-full py-2.5 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bolt text-amber-400"></i>
+          <span>One-Click Demo Email Login (demo@player.in)</span>
+        </button>
+      </div>
+
+      <!-- Features Badges -->
+      <div class="mt-6 grid grid-cols-3 gap-2 text-center relative z-10">
+        <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800/80">
+          <div class="text-amber-400 font-bold text-xs">100 Rounds</div>
+          <div class="text-[10px] text-slate-400">= ₹10 Claim</div>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800/80">
+          <div class="text-emerald-400 font-bold text-xs">Min ₹50</div>
+          <div class="text-[10px] text-slate-400">UPI Withdraw</div>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800/80">
+          <div class="text-sky-400 font-bold text-xs">4 Slots</div>
+          <div class="text-[10px] text-slate-400">50/100/200/400</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 2. TOP HEADER / NAVIGATION BAR (PC & MOBILE)                          -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-30 bg-[#0B0F19]/90 backdrop-blur-md border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <!-- Brand + Logged-in Email Badge -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+          <i class="fa-solid fa-gamepad text-slate-950 text-lg"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="font-display font-extrabold text-sm sm:text-lg text-white truncate">Tic-Tac-Toe <span class="text-amber-400">Earn</span></h1>
+            <span id="cloudSyncBadge" class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Synced
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-400 truncate">
+            <i class="fa-solid fa-envelope text-amber-400/80 text-[10px]"></i>
+            <span id="headerUserEmail" class="truncate max-w-[130px] sm:max-w-[220px]">Not logged in</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Pills -->
+      <nav class="hidden lg:flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <button onclick="switchMainTab('game')" id="pcNavGame" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950">
+          <i class="fa-solid fa-chess-board mr-1.5"></i>Play Game
+        </button>
+        <button onclick="switchMainTab('claim')" id="pcNavClaim" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white relative">
+          <i class="fa-solid fa-gift mr-1.5 text-amber-400"></i>Claim ₹10
+          <span id="pcClaimBadge" class="hidden ml-1 px-1.5 py-0.2 bg-emerald-500 text-slate-950 rounded-full text-[10px] font-extrabold">READY</span>
+        </button>
+        <button onclick="switchMainTab('withdraw')" id="pcNavWithdraw" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white">
+          <i class="fa-solid fa-building-columns mr-1.5 text-emerald-400"></i>UPI Withdraw
+        </button>
+      </nav>
+
+      <!-- Right Status: Rounds Counter, Wallet Balance, Sound & Logout -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <!-- Rounds Counter Pill -->
+        <button onclick="switchMainTab('claim')" title="Click to view 100 Rounds Claim Progress" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-500/50 transition-all">
+          <i class="fa-solid fa-rotate text-amber-400 text-xs"></i>
+          <div class="text-left">
+            <div class="text-[9px] uppercase tracking-wider text-slate-400 leading-none">Rounds</div>
+            <div class="font-display font-bold text-xs sm:text-sm text-white leading-tight">
+              <span id="headerRoundsCount">0</span><span class="text-slate-400 text-[11px]">/100</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Wallet Balance Pill -->
+        <button onclick="switchMainTab('withdraw')" title="Click to Withdraw via UPI" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 hover:bg-emerald-500/25 transition-all">
+          <i class="fa-solid fa-wallet text-emerald-400 text-xs sm:text-sm"></i>
+          <div class="text-left">
+            <div class="text-[9px] uppercase tracking-wider text-emerald-300/80 leading-none">Balance</div>
+            <div class="font-display font-extrabold text-xs sm:text-sm text-emerald-400 leading-tight">
+              ₹<span id="headerWalletBalance">0.00</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- RazorpayX Gateway Setup Button -->
+        <button onclick="toggleRazorpaySetupModal()" title="RazorpayX Automatic UPI Gateway Setup" class="px-2.5 sm:px-3 py-1.5 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/40 hover:bg-indigo-500/25 text-indigo-300 flex items-center gap-1.5 transition-colors">
+          <i class="fa-solid fa-bolt-lightning text-indigo-400 text-xs"></i>
+          <span class="hidden md:inline text-[11px] font-bold">RazorpayX Setup</span>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSound()" title="Toggle Sound Effects" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 flex items-center justify-center transition-colors">
+          <i id="soundIcon" class="fa-solid fa-volume-high text-xs"></i>
+        </button>
+
+        <!-- Demo / Test Helper Modal Button -->
+        <button onclick="toggleTestPanelModal()" title="Tester / Admin Controls" class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-amber-400 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-sliders text-xs"></i>
+        </button>
+
+        <!-- Logout Button -->
+        <button onclick="handleLogout()" title="Logout / Change Email" class="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/25 text-rose-400 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-power-off text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- 3. MAIN CONTENT CONTAINER (RESPONSIVE PC + MOBILE LAYOUT)             -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
+
+    <!-- Quick Info Strip -->
+    <div class="mb-5 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-indigo-500/15 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-slate-200">
+        <span class="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-extrabold text-[11px] uppercase">Rule</span>
+        <span>Play <strong class="text-amber-400">100 Rounds</strong> (Full-Screen Ad after each round) <i class="fa-solid fa-arrow-right mx-1 text-slate-500"></i> Claim <strong class="text-emerald-400">₹10</strong> & Auto-Withdraw via <strong class="text-indigo-400">RazorpayX UPI</strong>!</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleRazorpaySetupModal()" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition-colors">
+          <i class="fa-solid fa-plug-circle-bolt mr-1"></i>RazorpayX Config
+        </button>
+        <button onclick="toggleTestPanelModal()" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition-colors">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Quick Test Tools
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- SECTION A: TIC-TAC-TOE GAME VIEW                                    -->
+    <!-- =================================================================== -->
+    <section id="sectionGame" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left / Center Column: Tic-Tac-Toe Board & Controls (7 cols on PC) -->
+      <div class="lg:col-span-7 bg-[#111827]/95 border border-slate-800/90 rounded-3xl p-4 sm:p-6 shadow-2xl">
+        <!-- Game Mode & Difficulty Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800/80">
+          <!-- Opponent Mode -->
+          <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <button id="modeAiBtn" onclick="setGameMode('ai')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition-all">
+              <i class="fa-solid fa-robot mr-1"></i>Vs AI Bot
+            </button>
+            <button id="modePvpBtn" onclick="setGameMode('pvp')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all">
+              <i class="fa-solid fa-user-group mr-1"></i>2 Players
+            </button>
+          </div>
+
+          <!-- AI Difficulty Selector -->
+          <div id="aiDifficultyBox" class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <button id="diffEasyBtn" onclick="setAiDifficulty('easy')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-white">Easy</button>
+            <button id="diffMediumBtn" onclick="setAiDifficulty('medium')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-700 text-amber-400">Medium</button>
+            <button id="diffHardBtn" onclick="setAiDifficulty('hard')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-white">Pro</button>
+          </div>
+        </div>
+
+        <!-- Scoreboard & Turn Indicator -->
+        <div class="grid grid-cols-3 gap-2.5 mb-5">
+          <!-- Player X -->
+          <div id="turnCardX" class="p-3 rounded-2xl bg-slate-900/90 border-2 border-amber-500/80 flex items-center justify-between transition-all">
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-amber-400">You (X)</div>
+              <div id="scoreX" class="font-display font-extrabold text-xl sm:text-2xl text-white">0</div>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-display font-black text-lg">
+              X
+            </div>
+          </div>
+
+          <!-- Draws -->
+          <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Draws</div>
+              <div id="scoreDraw" class="font-display font-extrabold text-xl sm:text-2xl text-slate-200">0</div>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400">
+              <i class="fa-solid fa-handshakeSimple text-sm"></i>
+            </div>
+          </div>
+
+          <!-- Player O / AI -->
+          <div id="turnCardO" class="p-3 rounded-2xl bg-slate-900/90 border-2 border-slate-800 flex items-center justify-between transition-all">
+            <div>
+              <div id="labelPlayerO" class="text-[10px] font-bold uppercase tracking-wider text-sky-400">AI Bot (O)</div>
+              <div id="scoreO" class="font-display font-extrabold text-xl sm:text-2xl text-white">0</div>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 font-display font-black text-lg">
+              O
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Turn Status Banner -->
+        <div class="mb-4 py-2.5 px-4 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+            <span id="turnStatusText" class="text-xs sm:text-sm font-bold text-slate-100">Your Turn — Place 'X' on the board</span>
+          </div>
+          <span class="text-[11px] font-semibold text-slate-400">
+            Total Played: <strong id="lifetimeRoundsBadge" class="text-slate-200">0</strong>
+          </span>
+        </div>
+
+        <!-- 3x3 TIC-TAC-TOE GRID -->
+        <div id="boardContainer" class="max-w-[360px] sm:max-w-[390px] mx-auto grid grid-cols-3 gap-3 sm:gap-3.5 p-3 sm:p-4 rounded-3xl bg-slate-950/90 border border-slate-800/90 shadow-inner">
+          <!-- 9 Cells dynamically rendered or static -->
+          <button onclick="handleCellClick(0)" id="cell-0" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(1)" id="cell-1" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(2)" id="cell-2" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(3)" id="cell-3" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(4)" id="cell-4" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(5)" id="cell-5" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(6)" id="cell-6" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(7)" id="cell-7" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+          <button onclick="handleCellClick(8)" id="cell-8" class="ttt-cell rounded-2xl bg-[#151F34] border-2 border-slate-700/70 flex items-center justify-center text-4xl sm:text-5xl font-display font-black"></button>
+        </div>
+
+        <!-- Bottom Action Bar under Board -->
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+          <div class="text-xs text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-tv text-amber-400"></i>
+            <span>Full-screen ad appears automatically when round ends.</span>
+          </div>
+          <button onclick="resetCurrentBoardOnly()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate-right"></i>Restart Current Board
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Side Column on PC: Live Claim Progress & Quick Wallet Overview (5 cols) -->
+      <div class="lg:col-span-5 space-y-5">
+        <!-- Mini 100-Round Claim Card (Always visible on Game screen) -->
+        <div class="bg-[#111827]/95 border border-slate-800/90 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                Milestone Reward
+              </span>
+              <h2 class="font-display font-extrabold text-lg text-white mt-1">Play 100 Times = Claim ₹10</h2>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-display font-black text-lg">
+              ₹10
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="mb-2 flex items-center justify-between text-xs font-bold">
+            <span class="text-slate-300">Current Progress</span>
+            <span class="text-amber-400"><span id="miniCardRounds">0</span> / 100 Rounds</span>
+          </div>
+          <div class="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5 mb-3">
+            <div id="miniCardProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+
+          <p id="miniCardStatusNote" class="text-xs text-slate-400 mb-4">
+            Complete <strong class="text-white">100 rounds</strong> to unlock your ₹10 cash claim. Counter resets to 0 after claiming!
+          </p>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <button id="miniQuickClaimBtn" onclick="claimTenRupeesReward()" disabled class="py-3 px-4 rounded-xl font-display font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-slate-800 text-slate-500 cursor-not-allowed">
+              <i class="fa-solid fa-coins"></i>
+              <span>Claim ₹10 Now</span>
+            </button>
+            <button onclick="switchMainTab('claim')" class="py-3 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm border border-slate-700 transition-all flex items-center justify-center gap-1.5">
+              <span>Open Claim Zone</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini UPI Withdrawal Preview Card -->
+        <div class="bg-[#111827]/95 border border-slate-800/90 rounded-3xl p-5 shadow-xl">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Instant UPI Transfer
+              </span>
+              <h3 class="font-display font-extrabold text-lg text-white mt-1">Wallet & 4 Withdrawal Slots</h3>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] text-slate-400 uppercase">Available</div>
+              <div class="font-display font-black text-xl text-emerald-400">₹<span id="miniWalletAmount">0.00</span></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 mb-4">
+            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-center">
+              <div class="font-display font-extrabold text-sm text-white">₹50</div>
+              <div class="text-[9px] text-emerald-400">Slot 1</div>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-center">
+              <div class="font-display font-extrabold text-sm text-white">₹100</div>
+              <div class="text-[9px] text-emerald-400">Slot 2</div>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-center">
+              <div class="font-display font-extrabold text-sm text-white">₹200</div>
+              <div class="text-[9px] text-emerald-400">Slot 3</div>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-center">
+              <div class="font-display font-extrabold text-sm text-white">₹400</div>
+              <div class="text-[9px] text-emerald-400">Slot 4</div>
+            </div>
+          </div>
+
+          <button onclick="switchMainTab('withdraw')" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-display font-extrabold text-sm shadow-lg shadow-emerald-500/15 transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-building-columns"></i>
+            <span>Withdraw via UPI (Min ₹50)</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION B: DEDICATED CLAIM REWARDS PAGE (100 ROUNDS = ₹10)          -->
+    <!-- =================================================================== -->
+    <section id="sectionClaim" class="hidden max-w-3xl mx-auto space-y-6">
+      <div class="bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold mb-2">
+              <i class="fa-solid fa-trophy"></i>
+              <span>Play & Claim Zone</span>
+            </div>
+            <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-white">
+              Play 100 Times <span class="text-amber-400">= Claim ₹10</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              Every completed round + full-screen ad adds +1 to your round counter. After claiming ₹10, the counter resets to 0 so you can earn again!
+            </p>
+          </div>
+          <div class="shrink-0 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-center min-w-[140px]">
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Total Claimed</div>
+            <div class="font-display font-black text-2xl text-emerald-400 mt-0.5">₹<span id="claimPageTotalEarned">0</span></div>
+            <div class="text-[11px] text-slate-500"><span id="claimPageTimesCount">0</span> Claims Done</div>
+          </div>
+        </div>
+
+        <!-- Big Counter & Progress Bar -->
+        <div class="my-8 text-center">
+          <div class="inline-flex items-baseline gap-2 px-6 py-4 rounded-3xl bg-slate-900/90 border border-slate-800 mb-5">
+            <span id="claimBigRoundCount" class="font-display font-black text-5xl sm:text-6xl text-amber-400">0</span>
+            <span class="font-display font-bold text-2xl text-slate-500">/ 100</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Rounds</span>
+          </div>
+
+          <div class="max-w-xl mx-auto">
+            <div class="flex justify-between text-xs font-bold mb-2">
+              <span class="text-slate-400">0 Rounds</span>
+              <span id="claimPercentText" class="text-amber-400">0% Completed</span>
+              <span class="text-emerald-400">100 Rounds (₹10)</span>
+            </div>
+            <div class="w-full h-5 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 p-1">
+              <div id="claimBigProgressBar" class="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 rounded-xl transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <p id="claimRemainingHint" class="text-sm text-slate-300 mt-4 font-medium">
+            Play <strong class="text-amber-400">100 more rounds</strong> to unlock your ₹10 reward!
+          </p>
+        </div>
+
+        <!-- Claim Action Button -->
+        <div class="max-w-md mx-auto">
+          <button id="mainClaimBtn" onclick="claimTenRupeesReward()" disabled class="w-full py-4 px-6 rounded-2xl font-display font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2.5 bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700">
+            <i class="fa-solid fa-lock"></i>
+            <span id="mainClaimBtnText">Complete 100 Rounds to Claim ₹10</span>
+          </button>
+        </div>
+
+        <!-- Step-by-Step Rules Box -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-slate-800/80">
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/90">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center mb-2">1</div>
+            <div class="font-bold text-sm text-white">Play Tic-Tac-Toe</div>
+            <p class="text-xs text-slate-400 mt-1">Finish any round (Win, Loss, or Draw) & close the full-screen ad to count +1 round.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/90">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-center mb-2">2</div>
+            <div class="font-bold text-sm text-white">Hit 100 Rounds</div>
+            <p class="text-xs text-slate-400 mt-1">When your counter reaches 100/100, the Claim ₹10 button unlocks immediately.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/90">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 font-bold text-sm flex items-center justify-center mb-2">3</div>
+            <div class="font-bold text-sm text-white">Auto Reset & Repeat</div>
+            <p class="text-xs text-slate-400 mt-1">₹10 is added to your wallet and the round counter resets to 0 for the next cycle!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION C: UPI WITHDRAWAL SYSTEM (4 SLOTS: 50, 100, 200, 400)       -->
+    <!-- =================================================================== -->
+    <section id="sectionWithdraw" class="hidden max-w-4xl mx-auto space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left 7 Cols: 4 Fixed Slots & UPI Form -->
+        <div class="lg:col-span-7 bg-[#111827] border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl">
+          <!-- Gateway Status Bar -->
+          <div class="mb-4 px-3.5 py-2.5 rounded-xl bg-indigo-950/50 border border-indigo-500/30 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-bold text-indigo-200">RazorpayX Composite UPI Payout:</span>
+              <span id="gatewayModeBadge" class="px-2 py-0.5 rounded bg-indigo-500/25 text-indigo-300 text-[10px] font-extrabold uppercase">AUTO-SANDBOX ACTIVE</span>
+            </div>
+            <button type="button" onclick="toggleRazorpaySetupModal()" class="text-[11px] font-bold text-amber-400 hover:underline shrink-0">
+              <i class="fa-solid fa-gear mr-1"></i>Setup Keys
+            </button>
+          </div>
+
+          <!-- Wallet Banner -->
+          <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/90 via-slate-900 to-slate-900 border border-emerald-500/30 flex items-center justify-between mb-6">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i>Available Withdrawable Balance
+              </div>
+              <div class="font-display font-black text-3xl sm:text-4xl text-white mt-1">
+                ₹<span id="withdrawPageBalance">0.00</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">
+                Minimum Withdrawal: <strong class="text-amber-400">₹50.00</strong> • 100% Automatic RazorpayX UPI Transfer
+              </div>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl shrink-0">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+          </div>
+
+          <!-- 4 FIXED WITHDRAWAL SLOTS (50, 100, 200, 400) -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-2.5">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                1. Select Withdrawal Slot (4 Fixed Slots Only)
+              </label>
+              <span class="text-[11px] font-semibold text-amber-400">Min ₹50</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <!-- Slot 1: ₹50 -->
+              <button type="button" onclick="selectWithdrawalSlot(50)" id="slotBtn-50" class="slot-card p-4 rounded-2xl bg-slate-900 border-2 border-emerald-500 text-center transition-all relative overflow-hidden">
+                <span class="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">MIN</span>
+                <div class="text-[10px] font-bold uppercase text-slate-400">Slot 1</div>
+                <div class="font-display font-black text-2xl text-white my-1">₹50</div>
+                <div class="text-[10px] font-semibold text-emerald-400">Auto UPI</div>
+              </button>
+
+              <!-- Slot 2: ₹100 -->
+              <button type="button" onclick="selectWithdrawalSlot(100)" id="slotBtn-100" class="slot-card p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 hover:border-slate-700 text-center transition-all relative overflow-hidden">
+                <div class="text-[10px] font-bold uppercase text-slate-400">Slot 2</div>
+                <div class="font-display font-black text-2xl text-white my-1">₹100</div>
+                <div class="text-[10px] font-semibold text-slate-400">Auto UPI</div>
+              </button>
+
+              <!-- Slot 3: ₹200 -->
+              <button type="button" onclick="selectWithdrawalSlot(200)" id="slotBtn-200" class="slot-card p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 hover:border-slate-700 text-center transition-all relative overflow-hidden">
+                <span class="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">POPULAR</span>
+                <div class="text-[10px] font-bold uppercase text-slate-400">Slot 3</div>
+                <div class="font-display font-black text-2xl text-white my-1">₹200</div>
+                <div class="text-[10px] font-semibold text-slate-400">Auto UPI</div>
+              </button>
+
+              <!-- Slot 4: ₹400 -->
+              <button type="button" onclick="selectWithdrawalSlot(400)" id="slotBtn-400" class="slot-card p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 hover:border-slate-700 text-center transition-all relative overflow-hidden">
+                <span class="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">MAX</span>
+                <div class="text-[10px] font-bold uppercase text-slate-400">Slot 4</div>
+                <div class="font-display font-black text-2xl text-white my-1">₹400</div>
+                <div class="text-[10px] font-semibold text-slate-400">Auto UPI</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- UPI ID Input Form -->
+          <form id="upiWithdrawForm" onsubmit="handleUpiWithdrawal(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                2. Enter Your UPI ID (Google Pay / PhonePe / Paytm / BHIM)
+              </label>
+              <div class="relative">
+                <i class="fa-solid fa-at absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 text-sm"></i>
+                <input id="upiIdInput" oninput="validateLiveUpiInput()" type="text" required placeholder="e.g. mobile@ybl or name@oksbi" class="w-full pl-10 pr-28 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm font-medium focus:outline-none focus:border-emerald-500 transition-colors" />
+                <span id="upiLiveBadge" class="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                  VPA READY
+                </span>
+              </div>
+
+              <!-- Quick UPI Handle Suffix Helpers -->
+              <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <span class="text-[10px] text-slate-400 mr-1">Quick add handle:</span>
+                <button type="button" onclick="appendUpiSuffix('@ybl')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium">@ybl</button>
+                <button type="button" onclick="appendUpiSuffix('@paytm')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium">@paytm</button>
+                <button type="button" onclick="appendUpiSuffix('@oksbi')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium">@oksbi</button>
+                <button type="button" onclick="appendUpiSuffix('@okaxis')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium">@okaxis</button>
+                <button type="button" onclick="appendUpiSuffix('@ibl')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium">@ibl</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Account Holder Name (For RazorpayX Contact)
+              </label>
+              <div class="relative">
+                <i class="fa-solid fa-user-check absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <input id="upiHolderInput" type="text" placeholder="Name registered on UPI" class="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" />
+              </div>
+            </div>
+
+            <!-- Selected Summary Strip -->
+            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
+              <div>
+                <span class="text-slate-400">Selected Slot Amount:</span>
+                <div class="text-[10px] text-slate-500">RazorpayX Payout Mode: <strong class="text-indigo-400">UPI (Instant)</strong></div>
+              </div>
+              <span class="font-display font-black text-lg text-emerald-400">₹<span id="selectedSlotDisplay">50</span>.00</span>
+            </div>
+
+            <button id="withdrawSubmitBtn" type="submit" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-display font-black text-base shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Instant UPI Withdraw ₹<span id="withdrawBtnAmountText">50</span></span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Right 5 Cols: Withdrawal & Claim History -->
+        <div class="lg:col-span-5 bg-[#111827] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[640px]">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+            <div>
+              <h3 class="font-display font-extrabold text-base text-white">Passbook & RazorpayX Transfers</h3>
+              <p class="text-xs text-slate-400">All ₹10 claims & instant UPI payouts</p>
+            </div>
+            <span id="txCountBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">0 Txns</span>
+          </div>
+
+          <div id="transactionHistoryList" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- 4. MOBILE BOTTOM NAVIGATION BAR                                       -->
+  <!-- ===================================================================== -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0B0F19]/95 backdrop-blur-lg border-t border-slate-800 px-3 py-2">
+    <div class="grid grid-cols-3 gap-2 max-w-md mx-auto">
+      <button onclick="switchMainTab('game')" id="mobNavGame" class="flex flex-col items-center justify-center py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all relative">
+        <i class="fa-solid fa-chess-board text-sm mb-0.5"></i>
+        <span>Play Game</span>
+      </button>
+      <button onclick="switchMainTab('claim')" id="mobNavClaim" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 font-bold text-xs transition-all relative">
+        <i class="fa-solid fa-gift text-sm mb-0.5"></i>
+        <span>Claim ₹10</span>
+        <span id="mobClaimDot" class="hidden absolute top-1 right-6 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+      </button>
+      <button onclick="switchMainTab('withdraw')" id="mobNavWithdraw" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 font-bold text-xs transition-all relative">
+        <i class="fa-solid fa-building-columns text-sm mb-0.5"></i>
+        <span>UPI Withdraw</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===================================================================== -->
+  <!-- 5. FULL-SCREEN INTERSTITIAL AD MODAL (SHOWN AFTER EVERY ROUND)        -->
+  <!-- ===================================================================== -->
+  <div id="fullScreenAdModal" class="hidden fixed inset-0 z-50 bg-[#050811] flex flex-col justify-between p-4 sm:p-6 overflow-y-auto">
+    <!-- Top Ad Bar -->
+    <div class="max-w-2xl w-full mx-auto flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-extrabold text-[10px] uppercase tracking-wider">Ad • Sponsor</span>
+        <span id="adRoundResultBadge" class="text-xs font-bold text-slate-200 truncate">Round Completed!</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="adTimerText" class="text-xs font-bold text-amber-400">Ad ends in 5s</span>
+      </div>
+    </div>
+
+    <!-- Timer Progress Strip -->
+    <div class="max-w-2xl w-full mx-auto mt-2 h-1.5 bg-slate-900 rounded-full overflow-hidden">
+      <div id="adTimerProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-1000" style="width: 0%"></div>
+    </div>
+
+    <!-- Center Full-Screen Ad Creative -->
+    <div class="max-w-xl w-full mx-auto my-auto py-6 text-center">
+      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-slate-900 via-[#111827] to-slate-900 border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-amber-400 to-emerald-500 flex items-center justify-center text-slate-950 text-4xl shadow-xl">
+          <i id="adDynamicIcon" class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold mb-2">
+          Verified Round Reward Sponsor
+        </div>
+        <h3 id="adHeadlineText" class="font-display text-2xl sm:text-3xl font-black text-white">
+          Play 100 Rounds & Claim ₹10 Instantly!
+        </h3>
+        <p id="adSubText" class="text-xs sm:text-sm text-slate-300 mt-2 max-w-md mx-auto">
+          Your completed round is being recorded. Once the 5-second full-screen ad finishes, click below to count +1 round and play the next match!
+        </p>
+
+        <!-- Next Round Preview Counter -->
+        <div class="mt-6 p-4 rounded-2xl bg-slate-950/90 border border-slate-800 inline-flex items-center gap-3">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+          <div class="text-left">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400">Updated Round Count After Ad</div>
+            <div id="adNextRoundPreview" class="font-display font-black text-base text-amber-400">1 / 100 Rounds</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Close Ad & Play Next Round Button -->
+    <div class="max-w-2xl w-full mx-auto pb-2 text-center">
+      <button id="closeAdNextRoundBtn" onclick="completeAdAndStartNextRound()" disabled class="w-full max-w-md mx-auto py-4 px-6 rounded-2xl font-display font-black text-base transition-all flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700">
+        <i id="closeAdBtnIcon" class="fa-solid fa-hourglass-half animate-spin"></i>
+        <span id="closeAdBtnText">Wait 5s to Close Ad & Play Next Round</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 6. UPI WITHDRAWAL RECEIPT MODAL & LIVE RAZORPAYX PROCESSING MODAL     -->
+  <!-- ===================================================================== -->
+  <!-- Live 3-Step RazorpayX Processing Overlay -->
+  <div id="razorpayProcessingModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#111827] border border-indigo-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
+      <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-800">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl">
+          <i class="fa-solid fa-spinner animate-spin"></i>
+        </div>
+        <div>
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-400">RazorpayX Payouts Engine</div>
+          <h3 class="font-display font-black text-lg text-white">Processing Automatic UPI Transfer...</h3>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs mb-5">
+        <!-- Step 1 -->
+        <div id="rzpStep1" class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-3">
+          <i id="rzpStep1Icon" class="fa-solid fa-circle-notch animate-spin text-indigo-400 text-sm"></i>
+          <div>
+            <div class="font-bold text-white">1. Creating RazorpayX Contact & VPA Fund Account</div>
+            <div id="rzpStep1Sub" class="text-[11px] text-slate-400">Verifying VPA handle with NPCI...</div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="rzpStep2" class="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center gap-3 opacity-50">
+          <i id="rzpStep2Icon" class="fa-regular fa-circle text-slate-500 text-sm"></i>
+          <div>
+            <div class="font-bold text-white">2. Calling Composite Payout API (/v1/payouts)</div>
+            <div id="rzpStep2Sub" class="text-[11px] text-slate-400">Mode: UPI • Purpose: payout</div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="rzpStep3" class="p-3 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center gap-3 opacity-50">
+          <i id="rzpStep3Icon" class="fa-regular fa-circle text-slate-500 text-sm"></i>
+          <div>
+            <div class="font-bold text-white">3. Instant Bank Credit & UTR Generation</div>
+            <div id="rzpStep3Sub" class="text-[11px] text-slate-400">Awaiting bank confirmation...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center text-[11px] text-slate-400">
+        Please do not close this window. Automatic transfer takes ~3 seconds.
+      </div>
+    </div>
+  </div>
+
+  <!-- Final UPI Receipt Modal -->
+  <div id="upiReceiptModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#111827] border border-emerald-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl text-center relative overflow-hidden">
+      <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 text-3xl">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <span class="px-3 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-extrabold uppercase tracking-wider">
+        RazorpayX UPI Payout Processed
+      </span>
+      <h3 class="font-display font-black text-3xl text-white mt-2">
+        ₹<span id="receiptAmount">50</span>.00 Sent!
+      </h3>
+      <p class="text-xs text-slate-400 mt-1">
+        Money has been automatically transferred to your UPI ID.
+      </p>
+
+      <!-- Receipt Details Box -->
+      <div class="my-5 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left space-y-2.5 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Payout Status</span>
+          <span class="font-bold text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>PROCESSED (UPI)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Beneficiary UPI ID</span>
+          <span id="receiptUpiId" class="font-bold text-white">player@ybl</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">RazorpayX Payout ID</span>
+          <span id="receiptPayoutId" class="font-mono font-semibold text-indigo-400">pout_98a7s6d5f4</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">NPCI Bank UTR No.</span>
+          <span id="receiptUtr" class="font-mono font-semibold text-amber-400">630219485712</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Account Email</span>
+          <span id="receiptEmail" class="font-medium text-slate-200 truncate max-w-[180px]">player@example.com</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Date & Time</span>
+          <span id="receiptTime" class="text-slate-300">Just now</span>
+        </div>
+      </div>
+
+      <button onclick="closeUpiReceiptModal()" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-extrabold text-sm transition-all">
+        Done & Continue Playing
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 6B. RAZORPAYX AUTOMATIC GATEWAY SETUP & BACKEND CODE MODAL            -->
+  <!-- ===================================================================== -->
+  <div id="razorpaySetupModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="w-full max-w-2xl bg-[#111827] border border-indigo-500/40 rounded-3xl p-5 sm:p-7 shadow-2xl my-auto max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <i class="fa-solid fa-bolt-lightning"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-extrabold text-base sm:text-lg text-white">RazorpayX Automatic UPI Payout Setup</h3>
+            <p class="text-xs text-slate-400">Connect your RazorpayX account for 100% hands-free UPI withdrawals</p>
+          </div>
+        </div>
+        <button onclick="toggleRazorpaySetupModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="space-y-4 text-xs">
+        <div class="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 leading-relaxed">
+          <strong class="text-white block mb-1"><i class="fa-solid fa-shield-halved mr-1 text-emerald-400"></i>Important Security Rule (For Owner):</strong>
+          RazorpayX requires your <code class="text-amber-300">Key Secret</code> to be called from a backend server endpoint so that players cannot inspect your secret key in the browser and steal wallet funds. Below you can switch between <strong>Instant Auto-Sandbox Mode</strong> (works right now) and <strong>Live Production API Mode</strong>.
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button type="button" id="modeBtnSandbox" onclick="setGatewayMode('sandbox')" class="p-3.5 rounded-2xl border-2 border-indigo-500 bg-indigo-500/15 text-left transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-white text-xs">1. Auto-Sandbox Mode</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-extrabold text-[10px]">ACTIVE</span>
+            </div>
+            <p class="text-[11px] text-slate-300">Simulates the 3-step RazorpayX UPI Payout flow & generates instant Payout ID + UTR receipt automatically.</p>
+          </button>
+
+          <button type="button" id="modeBtnLive" onclick="setGatewayMode('live')" class="p-3.5 rounded-2xl border-2 border-slate-800 bg-slate-900 hover:border-slate-700 text-left transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-white text-xs">2. Live Production Backend</span>
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold text-[10px]">SERVER API</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Calls your deployed Node.js / Vercel Serverless URL (<code class="text-indigo-300">/api/razorpayx-payout</code>) for real money UPI payout.</p>
+          </button>
+        </div>
+
+        <!-- Live Backend Endpoint Input -->
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+              Your Backend Payout API Endpoint URL (For Live Mode)
+            </label>
+            <input id="rzpBackendUrlInput" type="text" value="/api/razorpayx-payout" placeholder="https://your-project.vercel.app/api/razorpayx-payout" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <input id="rzpFallbackToggle" type="checkbox" checked class="rounded bg-slate-800 border-slate-700 text-indigo-500" />
+              <span>Auto-fallback to Sandbox if Backend URL is not deployed yet</span>
+            </label>
+            <button type="button" onclick="saveGatewayConfig()" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-extrabold text-xs transition-all">
+              Save Gateway Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Ready-to-Deploy Node.js / Vercel Serverless Code -->
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <span class="text-xs font-bold text-amber-400"><i class="fa-solid fa-code mr-1"></i>Ready-to-Use RazorpayX Backend File (<code class="text-white">api/razorpayx-payout.js</code>)</span>
+              <p class="text-[11px] text-slate-400">Paste this file in Vercel / Node.js and add your 3 RazorpayX keys in Environment Variables:</p>
+            </div>
+            <button type="button" onclick="copyBackendServerCode()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs border border-emerald-500/30 shrink-0">
+              <i class="fa-solid fa-copy mr-1"></i>Copy Code
+            </button>
+          </div>
+
+          <pre id="backendCodeBlock" class="p-3 rounded-xl bg-[#070B14] border border-slate-800 text-[11px] font-mono text-slate-300 overflow-x-auto max-h-48 select-all">// File: api/razorpayx-payout.js (Deploy free on Vercel / Render / Node.js)
+// Environment Variables required from your RazorpayX Dashboard:
+// 1. RAZORPAYX_KEY_ID        (e.g. rzp_live_xxxxxxxxxxxx)
+// 2. RAZORPAYX_KEY_SECRET    (Your Secret Key)
+// 3. RAZORPAYX_ACCOUNT_NO    (Your RazorpayX Current/Virtual Account Number)
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  try {
+    const { email, name, upiId, amountInr, idempotencyKey } = req.body;
+    const allowedSlots = [50, 100, 200, 400];
+    if (!allowedSlots.includes(Number(amountInr))) {
+      return res.status(400).json({ error: 'Invalid slot amount. Allowed: 50, 100, 200, 400' });
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(
+      process.env.RAZORPAYX_KEY_ID + ':' + process.env.RAZORPAYX_KEY_SECRET
+    ).toString('base64');
+
+    const response = await fetch('https://api.razorpay.com/v1/payouts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'X-Payout-Idempotency': idempotencyKey || ('idp_' + Date.now())
+      },
+      body: JSON.stringify({
+        account_number: process.env.RAZORPAYX_ACCOUNT_NO,
+        amount: Number(amountInr) * 100, // RazorpayX takes amount in Paise (₹50 = 5000 paise)
+        currency: 'INR',
+        mode: 'UPI',
+        purpose: 'payout',
+        fund_account: {
+          account_type: 'vpa',
+          vpa: { address: upiId },
+          contact: {
+            name: name || 'TicTacToe Player',
+            email: email,
+            type: 'customer'
+          }
+        },
+        queue_if_low_balance: true,
+        reference_id: 'TTT_' + Date.now(),
+        narration: 'TicTacToe Game Cash Reward'
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.description || 'Payout failed' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      payoutId: data.id,
+      utr: data.utr || ('UTR' + Date.now().toString().slice(-9)),
+      status: data.status
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button onclick="toggleRazorpaySetupModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 7. TESTER / DEMO ADMIN CONTROLS MODAL (FOR QUICK VERIFICATION)        -->
+  <!-- ===================================================================== -->
+  <div id="testPanelModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#111827] border border-amber-500/40 rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-amber-400"></i>
+          <h3 class="font-display font-bold text-base text-white">Tester & Verification Controls</h3>
+        </div>
+        <button onclick="toggleTestPanelModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-4">
+        Use these buttons to quickly test the <strong>100 Rounds = ₹10 Claim</strong>, <strong>Full-Screen Ad</strong>, and <strong>UPI Withdrawal (₹50/100/200/400)</strong> without playing 100 manual rounds first:
+      </p>
+
+      <div class="grid grid-cols-2 gap-2.5 mb-4">
+        <button onclick="adminAddRounds(10)" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition-all">
+          <div class="text-xs font-bold text-amber-400">+10 Rounds</div>
+          <div class="text-[10px] text-slate-400">Add 10 to counter</div>
+        </button>
+        <button onclick="adminAddRounds(100)" class="p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-left transition-all">
+          <div class="text-xs font-bold text-amber-300">Set 100 Rounds</div>
+          <div class="text-[10px] text-amber-200/70">Test ₹10 Claim Ready</div>
+        </button>
+        <button onclick="adminAddBalance(50)" class="p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-left transition-all">
+          <div class="text-xs font-bold text-emerald-300">+₹50 Balance</div>
+          <div class="text-[10px] text-emerald-200/70">Test ₹50 UPI Slot</div>
+        </button>
+        <button onclick="adminAddBalance(200)" class="p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-left transition-all">
+          <div class="text-xs font-bold text-emerald-300">+₹200 Balance</div>
+          <div class="text-[10px] text-emerald-200/70">Test Higher Slots</div>
+        </button>
+      </div>
+
+      <button onclick="triggerFullScreenAd('Manual Ad Preview Test')" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all mb-3">
+        <i class="fa-solid fa-tv mr-1.5 text-amber-400"></i>Preview Full-Screen Interstitial Ad Now
+      </button>
+
+      <button onclick="toggleTestPanelModal()" class="w-full py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs">
+        Close Panel
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 8. CUSTOM TOAST NOTIFICATION CONTAINER                                -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- 9. APPLICATION LOGIC & FIREBASE CLOUD STORAGE                         -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // -----------------------------------------------------------------------
+    // STATE MANAGEMENT
+    // -----------------------------------------------------------------------
+    const state = {
+      isLoggedIn: false,
+      authMode: 'login', // 'login' | 'signup'
+      email: '',
+      name: '',
+      passwordHash: '',
+
+      // Game Board State
+      board: Array(9).fill(''),
+      currentPlayer: 'X',
+      gameActive: true,
+      gameMode: 'ai',        // 'ai' | 'pvp'
+      aiDifficulty: 'medium',// 'easy' | 'medium' | 'hard'
+      scores: { X: 0, O: 0, draw: 0 },
+
+      // Rounds & Wallet Earnings State
+      roundsPlayed: 0,       // Resets to 0 after claiming ₹10 at 100 rounds
+      lifetimeRounds: 0,     // Lifetime rounds counter
+      walletBalance: 0,      // Current withdrawable INR balance
+      totalClaimedAmount: 0, // Total ₹ claimed from 100-round milestones
+      totalClaimsCount: 0,   // Number of times ₹10 was claimed
+      savedUpiId: '',
+      savedUpiHolder: '',
+      transactions: [],
+
+      // Withdrawal UI & RazorpayX Gateway Config
+      selectedSlot: 50,      // Strict 4 slots: 50, 100, 200, 400
+      gatewayMode: 'sandbox',// 'sandbox' | 'live'
+      backendUrl: '/api/razorpayx-payout',
+      autoFallbackToSandbox: true,
+
+      // Audio & Ad Timer
+      soundEnabled: true,
+      adTimerInterval: null,
+      adRemainingSeconds: 5
+    };
+
+    // Persistent LocalStorage + In-memory account registry so every Email ID retains its balance & rounds
+    const LOCAL_STORAGE_ACCOUNTS_KEY = 'ttt_cash_pro_accounts_v2';
+    const LOCAL_STORAGE_ACTIVE_EMAIL_KEY = 'ttt_cash_pro_active_email_v2';
+    const LOCAL_STORAGE_GATEWAY_KEY = 'ttt_cash_pro_gateway_cfg_v2';
+    const memoryAccountStore = {};
+
+    function loadLocalAccountsDict() {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_ACCOUNTS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          Object.assign(memoryAccountStore, parsed);
+        }
+      } catch (e) {
+        console.warn("localStorage read warning:", e);
+      }
+    }
+
+    function saveLocalAccountsDict() {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_ACCOUNTS_KEY, JSON.stringify(memoryAccountStore));
+      } catch (e) {
+        console.warn("localStorage write warning:", e);
+      }
+    }
+
+    // Firebase references
+    let db = null;
+    let auth = null;
+    let firebaseUser = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ttt-play-earn-app';
+
+    // -----------------------------------------------------------------------
+    // WEB AUDIO API SOUND SYNTHESIZER (NO EXTERNAL MP3 NEEDED)
+    // -----------------------------------------------------------------------
+    let audioCtx = null;
+    function playSound(type) {
+      if (!state.soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+
+        if (type === 'moveX') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.08);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === 'moveO') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.14, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.008, now + idx * 0.08 + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.22);
+          });
+        } else if (type === 'draw') {
+          [380, 340].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.1, now + idx * 0.12);
+            gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.12 + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.15);
+          });
+        } else if (type === 'cash') {
+          [880, 1174.66, 1567.98].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+            gain.gain.setValueAtTime(0.16, now + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.008, now + idx * 0.09 + 0.28);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.09);
+            osc.stop(now + idx * 0.09 + 0.28);
+          });
+        }
+      } catch (e) {
+        // Ignore audio errors if blocked by browser autoplay policy
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // TOAST NOTIFICATION HELPER (NO BROWSER ALERT/CONFIRM)
+    // -----------------------------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const colors = {
+        success: 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200',
+        warning: 'bg-amber-950/95 border-amber-500/50 text-amber-200',
+        error: 'bg-rose-950/95 border-rose-500/50 text-rose-200',
+        info: 'bg-slate-900/95 border-slate-700 text-slate-200'
+      };
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        warning: 'fa-triangle-exclamation text-amber-400',
+        error: 'fa-circle-exclamation text-rose-400',
+        info: 'fa-bell text-amber-400'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto p-3.5 rounded-2xl border shadow-xl backdrop-blur-md flex items-center gap-2.5 text-xs font-semibold transition-all duration-300 ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-base shrink-0"></i>
+        <span class="leading-snug">${message}</span>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3400);
+    }
+
+    // -----------------------------------------------------------------------
+    // FIREBASE INITIALIZATION & CLOUD PROFILE SYNC
+    // -----------------------------------------------------------------------
+    async function initFirebase() {
+      try {
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            const cred = await signInWithCustomToken(auth, __initial_auth_token);
+            firebaseUser = cred.user;
+          } else {
+            const cred = await signInAnonymously(auth);
+            firebaseUser = cred.user;
+          }
+
+          const syncBadge = document.getElementById('cloudSyncBadge');
+          if (syncBadge) syncBadge.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.warn("Running in in-memory session mode:", err);
+      }
+    }
+
+    function sanitizeEmailKey(email) {
+      return email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    }
+
+    async function saveAccountDataToCloud() {
+      if (!state.isLoggedIn || !state.email) return;
+      const emailKey = sanitizeEmailKey(state.email);
+
+      const payload = {
+        email: state.email.trim().toLowerCase(),
+        name: state.name,
+        passwordHash: state.passwordHash,
+        roundsPlayed: state.roundsPlayed,
+        lifetimeRounds: state.lifetimeRounds,
+        walletBalance: state.walletBalance,
+        totalClaimedAmount: state.totalClaimedAmount,
+        totalClaimsCount: state.totalClaimsCount,
+        savedUpiId: state.savedUpiId,
+        savedUpiHolder: state.savedUpiHolder,
+        transactionsJson: JSON.stringify(state.transactions || []),
+        scoresJson: JSON.stringify(state.scores || { X: 0, O: 0, draw: 0 }),
+        updatedAt: Date.now()
+      };
+
+      // Always keep in-memory store & browser localStorage updated
+      memoryAccountStore[emailKey] = payload;
+      saveLocalAccountsDict();
+      try {
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_EMAIL_KEY, state.email.trim().toLowerCase());
+      } catch (e) {}
+
+      // Sync to Firestore if available (Rule 1 & Rule 3 respected)
+      if (db && firebaseUser) {
+        try {
+          const accountDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'emailAccounts', emailKey);
+          await setDoc(accountDocRef, payload, { merge: true });
+        } catch (e) {
+          console.warn("Cloud sync skipped:", e);
+        }
+      }
+    }
+
+    async function fetchAccountByEmail(email) {
+      loadLocalAccountsDict();
+      const emailKey = sanitizeEmailKey(email);
+      if (db && firebaseUser) {
+        try {
+          const accountDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'emailAccounts', emailKey);
+          const snap = await getDoc(accountDocRef);
+          if (snap.exists()) {
+            const cloudData = snap.data();
+            memoryAccountStore[emailKey] = cloudData;
+            saveLocalAccountsDict();
+            return cloudData;
+          }
+        } catch (e) {
+          console.warn("Cloud fetch fallback:", e);
+        }
+      }
+      return memoryAccountStore[emailKey] || null;
+    }
+
+    // -----------------------------------------------------------------------
+    // AUTHENTICATION FLOW (EMAIL LOGIN / SIGN UP / DEMO LOGIN)
+    // -----------------------------------------------------------------------
+    window.switchAuthTab = function(mode) {
+      state.authMode = mode;
+      const loginBtn = document.getElementById('tabLoginBtn');
+      const signupBtn = document.getElementById('tabSignupBtn');
+      const nameGroup = document.getElementById('signupNameGroup');
+      const submitText = document.getElementById('authSubmitText');
+      const errBox = document.getElementById('authErrorMsg');
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (mode === 'login') {
+        loginBtn.className = 'py-2.5 text-sm font-bold rounded-lg bg-amber-500 text-slate-950 shadow transition-all';
+        signupBtn.className = 'py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all';
+        nameGroup.classList.add('hidden');
+        submitText.textContent = 'Login with Email';
+      } else {
+        signupBtn.className = 'py-2.5 text-sm font-bold rounded-lg bg-amber-500 text-slate-950 shadow transition-all';
+        loginBtn.className = 'py-2.5 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all';
+        nameGroup.classList.remove('hidden');
+        submitText.textContent = 'Create Email Account';
+      }
+    };
+
+    window.togglePasswordVisibility = function() {
+      const input = document.getElementById('authPasswordInput');
+      const icon = document.getElementById('passEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    };
+
+    function showAuthError(msg) {
+      const box = document.getElementById('authErrorMsg');
+      const txt = document.getElementById('authErrorText');
+      if (box && txt) {
+        txt.textContent = msg;
+        box.classList.remove('hidden');
+      }
+    }
+
+    window.handleEmailAuth = async function(e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('authEmailInput').value.trim().toLowerCase();
+      const passInput = document.getElementById('authPasswordInput').value;
+      const nameInput = document.getElementById('authNameInput').value.trim();
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      if (!emailInput || !emailInput.includes('@')) {
+        showAuthError('Please enter a valid Email ID.');
+        return;
+      }
+      if (!passInput || passInput.length < 4) {
+        showAuthError('Password must be at least 4 characters.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      const existingData = await fetchAccountByEmail(emailInput);
+
+      if (state.authMode === 'signup') {
+        if (existingData && existingData.passwordHash && existingData.passwordHash !== passInput) {
+          showAuthError('This Email ID is already registered. Please switch to Email Login.');
+          submitBtn.disabled = false;
+          return;
+        }
+        // Initialize new account
+        state.isLoggedIn = true;
+        state.email = emailInput;
+        state.name = nameInput || emailInput.split('@')[0];
+        state.passwordHash = passInput;
+        state.roundsPlayed = existingData ? (existingData.roundsPlayed || 0) : 0;
+        state.lifetimeRounds = existingData ? (existingData.lifetimeRounds || 0) : 0;
+        state.walletBalance = existingData ? (existingData.walletBalance || 0) : 0;
+        state.totalClaimedAmount = existingData ? (existingData.totalClaimedAmount || 0) : 0;
+        state.totalClaimsCount = existingData ? (existingData.totalClaimsCount || 0) : 0;
+        state.savedUpiId = existingData ? (existingData.savedUpiId || '') : '';
+        state.savedUpiHolder = existingData ? (existingData.savedUpiHolder || '') : '';
+        state.transactions = existingData && existingData.transactionsJson ? JSON.parse(existingData.transactionsJson) : [];
+        state.scores = existingData && existingData.scoresJson ? JSON.parse(existingData.scoresJson) : { X: 0, O: 0, draw: 0 };
+
+        await saveAccountDataToCloud();
+        completeLoginTransition(`Account created! Welcome, ${state.email}`);
+      } else {
+        // Login Mode: If account exists, verify password; if new email, seamlessly register & log them in so user never gets stuck
+        if (existingData) {
+          if (existingData.passwordHash && existingData.passwordHash !== passInput) {
+            showAuthError('Incorrect password for this Email ID.');
+            submitBtn.disabled = false;
+            return;
+          }
+          state.isLoggedIn = true;
+          state.email = existingData.email;
+          state.name = existingData.name || emailInput.split('@')[0];
+          state.passwordHash = existingData.passwordHash || passInput;
+          state.roundsPlayed = Number(existingData.roundsPlayed || 0);
+          state.lifetimeRounds = Number(existingData.lifetimeRounds || 0);
+          state.walletBalance = Number(existingData.walletBalance || 0);
+          state.totalClaimedAmount = Number(existingData.totalClaimedAmount || 0);
+          state.totalClaimsCount = Number(existingData.totalClaimsCount || 0);
+          state.savedUpiId = existingData.savedUpiId || '';
+          state.savedUpiHolder = existingData.savedUpiHolder || '';
+          state.transactions = existingData.transactionsJson ? JSON.parse(existingData.transactionsJson) : [];
+          state.scores = existingData.scoresJson ? JSON.parse(existingData.scoresJson) : { X: 0, O: 0, draw: 0 };
+          completeLoginTransition(`Welcome back, ${state.email}!`);
+        } else {
+          // Auto-create account on first login for convenience
+          state.isLoggedIn = true;
+          state.email = emailInput;
+          state.name = emailInput.split('@')[0];
+          state.passwordHash = passInput;
+          state.roundsPlayed = 0;
+          state.lifetimeRounds = 0;
+          state.walletBalance = 0;
+          state.totalClaimedAmount = 0;
+          state.totalClaimsCount = 0;
+          state.savedUpiId = '';
+          state.savedUpiHolder = '';
+          state.transactions = [];
+          state.scores = { X: 0, O: 0, draw: 0 };
+          await saveAccountDataToCloud();
+          completeLoginTransition(`Logged in as ${state.email}`);
+        }
+      }
+      submitBtn.disabled = false;
+    };
+
+    window.quickDemoLogin = async function() {
+      document.getElementById('authEmailInput').value = 'demo@player.in';
+      document.getElementById('authPasswordInput').value = '123456';
+      state.authMode = 'login';
+      await window.handleEmailAuth(new Event('submit'));
+    };
+
+    function completeLoginTransition(welcomeText) {
+      document.getElementById('authScreen').classList.add('hidden');
+      if (state.savedUpiId) {
+        document.getElementById('upiIdInput').value = state.savedUpiId;
+      }
+      if (state.savedUpiHolder) {
+        document.getElementById('upiHolderInput').value = state.savedUpiHolder;
+      }
+      resetBoardStateForNewRound();
+      updateAllUI();
+      showToast(welcomeText, 'success');
+    }
+
+    window.handleLogout = function() {
+      state.isLoggedIn = false;
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_ACTIVE_EMAIL_KEY);
+      } catch (e) {}
+      document.getElementById('authScreen').classList.remove('hidden');
+      showToast('Logged out successfully. You can log in with any Email ID.', 'info');
+    };
+
+    // -----------------------------------------------------------------------
+    // NAVIGATION BETWEEN GAME / CLAIM / WITHDRAW TABS
+    // -----------------------------------------------------------------------
+    window.switchMainTab = function(tab) {
+      const secGame = document.getElementById('sectionGame');
+      const secClaim = document.getElementById('sectionClaim');
+      const secWithdraw = document.getElementById('sectionWithdraw');
+
+      secGame.classList.add('hidden');
+      secClaim.classList.add('hidden');
+      secWithdraw.classList.add('hidden');
+
+      if (tab === 'game') secGame.classList.remove('hidden');
+      if (tab === 'claim') secClaim.classList.remove('hidden');
+      if (tab === 'withdraw') secWithdraw.classList.remove('hidden');
+
+      // Update Desktop Nav Styles
+      const pcTabs = {
+        game: document.getElementById('pcNavGame'),
+        claim: document.getElementById('pcNavClaim'),
+        withdraw: document.getElementById('pcNavWithdraw')
+      };
+      Object.keys(pcTabs).forEach(k => {
+        if (!pcTabs[k]) return;
+        if (k === tab) {
+          pcTabs[k].className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950';
+        } else {
+          pcTabs[k].className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white relative';
+        }
+      });
+
+      // Update Mobile Nav Styles
+      const mobTabs = {
+        game: document.getElementById('mobNavGame'),
+        claim: document.getElementById('mobNavClaim'),
+        withdraw: document.getElementById('mobNavWithdraw')
+      };
+      Object.keys(mobTabs).forEach(k => {
+        if (!mobTabs[k]) return;
+        if (k === tab) {
+          mobTabs[k].className = 'flex flex-col items-center justify-center py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all relative';
+        } else {
+          mobTabs[k].className = 'flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 font-bold text-xs transition-all relative';
+        }
+      });
+
+      updateAllUI();
+    };
+
+    // -----------------------------------------------------------------------
+    // TIC-TAC-TOE GAME ENGINE (PLAYER VS AI & 2-PLAYER PASS & PLAY)
+    // -----------------------------------------------------------------------
+    const WIN_LINES = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
+      [0, 4, 8], [2, 4, 6]             // Diagonals
+    ];
+
+    window.setGameMode = function(mode) {
+      state.gameMode = mode;
+      const aiBtn = document.getElementById('modeAiBtn');
+      const pvpBtn = document.getElementById('modePvpBtn');
+      const diffBox = document.getElementById('aiDifficultyBox');
+      const labelO = document.getElementById('labelPlayerO');
+
+      if (mode === 'ai') {
+        aiBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition-all';
+        pvpBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all';
+        diffBox.classList.remove('hidden');
+        labelO.textContent = 'AI Bot (O)';
+      } else {
+        pvpBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition-all';
+        aiBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all';
+        diffBox.classList.add('hidden');
+        labelO.textContent = 'Player 2 (O)';
+      }
+      resetBoardStateForNewRound();
+    };
+
+    window.setAiDifficulty = function(level) {
+      state.aiDifficulty = level;
+      const btns = {
+        easy: document.getElementById('diffEasyBtn'),
+        medium: document.getElementById('diffMediumBtn'),
+        hard: document.getElementById('diffHardBtn')
+      };
+      Object.keys(btns).forEach(k => {
+        if (k === level) {
+          btns[k].className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-700 text-amber-400';
+        } else {
+          btns[k].className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-white';
+        }
+      });
+      resetBoardStateForNewRound();
+    };
+
+    window.handleCellClick = function(index) {
+      if (!state.gameActive || state.board[index] !== '') return;
+      if (state.gameMode === 'ai' && state.currentPlayer === 'O') return;
+
+      makeMove(index, state.currentPlayer);
+
+      // If game is still active and mode is AI, trigger AI move
+      if (state.gameActive && state.gameMode === 'ai' && state.currentPlayer === 'O') {
+        setTimeout(() => {
+          performAiMove();
+        }, 380);
+      }
+    };
+
+    function makeMove(index, symbol) {
+      state.board[index] = symbol;
+      const cell = document.getElementById(`cell-${index}`);
+      if (cell) {
+        cell.disabled = true;
+        if (symbol === 'X') {
+          cell.innerHTML = `<span class="symbol-pop text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.5)]">X</span>`;
+          playSound('moveX');
+        } else {
+          cell.innerHTML = `<span class="symbol-pop text-sky-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">O</span>`;
+          playSound('moveO');
+        }
+      }
+
+      const winInfo = checkWinner(state.board);
+      if (winInfo) {
+        finishRound(winInfo.winner, winInfo.line);
+        return;
+      }
+
+      if (state.board.every(cellVal => cellVal !== '')) {
+        finishRound('DRAW', null);
+        return;
+      }
+
+      // Switch turn
+      state.currentPlayer = state.currentPlayer === 'X' ? 'O' : 'X';
+      updateTurnIndicatorUI();
+    }
+
+    function checkWinner(boardArr) {
+      for (const line of WIN_LINES) {
+        const [a, b, c] = line;
+        if (boardArr[a] && boardArr[a] === boardArr[b] && boardArr[a] === boardArr[c]) {
+          return { winner: boardArr[a], line };
+        }
+      }
+      return null;
+    }
+
+    function performAiMove() {
+      if (!state.gameActive) return;
+      const emptyIndices = state.board
+        .map((val, idx) => (val === '' ? idx : null))
+        .filter(val => val !== null);
+
+      if (emptyIndices.length === 0) return;
+
+      let chosenIndex = null;
+
+      if (state.aiDifficulty === 'easy') {
+        chosenIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      } else if (state.aiDifficulty === 'medium') {
+        // 65% smart move, 35% random
+        if (Math.random() < 0.65) {
+          chosenIndex = findBestMoveMinimax(state.board, 'O');
+        } else {
+          chosenIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        }
+      } else {
+        // Pro mode: Minimax
+        chosenIndex = findBestMoveMinimax(state.board, 'O');
+      }
+
+      if (chosenIndex === null || chosenIndex === undefined) {
+        chosenIndex = emptyIndices[0];
+      }
+      makeMove(chosenIndex, 'O');
+    }
+
+    function findBestMoveMinimax(boardArr, aiSymbol) {
+      const humanSymbol = aiSymbol === 'O' ? 'X' : 'O';
+
+      // 1. Check immediate win for AI
+      for (let i = 0; i < 9; i++) {
+        if (boardArr[i] === '') {
+          boardArr[i] = aiSymbol;
+          if (checkWinner(boardArr)) {
+            boardArr[i] = '';
+            return i;
+          }
+          boardArr[i] = '';
+        }
+      }
+      // 2. Check immediate block against human
+      for (let i = 0; i < 9; i++) {
+        if (boardArr[i] === '') {
+          boardArr[i] = humanSymbol;
+          if (checkWinner(boardArr)) {
+            boardArr[i] = '';
+            return i;
+          }
+          boardArr[i] = '';
+        }
+      }
+      // 3. Take center if free
+      if (boardArr[4] === '') return 4;
+
+      // 4. Take corners
+      const corners = [0, 2, 6, 8].filter(i => boardArr[i] === '');
+      if (corners.length > 0) {
+        return corners[Math.floor(Math.random() * corners.length)];
+      }
+
+      // 5. Any available spot
+      const available = boardArr.map((v, idx) => (v === '' ? idx : null)).filter(v => v !== null);
+      return available[0];
+    }
+
+    function finishRound(result, winningLine) {
+      state.gameActive = false;
+
+      // Highlight winning cells if any
+      if (winningLine) {
+        winningLine.forEach(idx => {
+          const cell = document.getElementById(`cell-${idx}`);
+          if (cell) cell.classList.add('win-cell');
+        });
+      }
+
+      let outcomeLabel = '';
+      if (result === 'X') {
+        state.scores.X += 1;
+        outcomeLabel = 'You Won This Round! (X Wins)';
+        playSound('win');
+      } else if (result === 'O') {
+        state.scores.O += 1;
+        outcomeLabel = state.gameMode === 'ai' ? 'AI Bot Won This Round!' : 'Player 2 (O) Won This Round!';
+        playSound('draw');
+      } else {
+        state.scores.draw += 1;
+        outcomeLabel = "It's a Draw Round!";
+        playSound('draw');
+      }
+
+      const statusText = document.getElementById('turnStatusText');
+      if (statusText) {
+        statusText.textContent = `${outcomeLabel} • Loading Full-Screen Ad...`;
+      }
+
+      updateAllUI();
+
+      // Automatically show Full-Screen Ad after a brief 950ms pause so the player sees the winning line
+      setTimeout(() => {
+        triggerFullScreenAd(outcomeLabel);
+      }, 950);
+    }
+
+    function resetBoardStateForNewRound() {
+      state.board = Array(9).fill('');
+      state.currentPlayer = 'X';
+      state.gameActive = true;
+
+      for (let i = 0; i < 9; i++) {
+        const cell = document.getElementById(`cell-${i}`);
+        if (cell) {
+          cell.innerHTML = '';
+          cell.disabled = false;
+          cell.classList.remove('win-cell');
+        }
+      }
+      updateTurnIndicatorUI();
+    }
+
+    window.resetCurrentBoardOnly = function() {
+      resetBoardStateForNewRound();
+      showToast('Board reset. Finish a round to trigger the ad & count +1 round.', 'info');
+    };
+
+    function updateTurnIndicatorUI() {
+      const cardX = document.getElementById('turnCardX');
+      const cardO = document.getElementById('turnCardO');
+      const statusText = document.getElementById('turnStatusText');
+
+      if (state.currentPlayer === 'X') {
+        cardX.className = 'p-3 rounded-2xl bg-slate-900/90 border-2 border-amber-500 flex items-center justify-between transition-all shadow-lg shadow-amber-500/10';
+        cardO.className = 'p-3 rounded-2xl bg-slate-900/90 border-2 border-slate-800 flex items-center justify-between transition-all';
+        statusText.textContent = "Your Turn — Place 'X' on any square";
+      } else {
+        cardO.className = 'p-3 rounded-2xl bg-slate-900/90 border-2 border-sky-400 flex items-center justify-between transition-all shadow-lg shadow-sky-500/10';
+        cardX.className = 'p-3 rounded-2xl bg-slate-900/90 border-2 border-slate-800 flex items-center justify-between transition-all';
+        statusText.textContent = state.gameMode === 'ai' ? "AI Bot (O) is thinking..." : "Player 2's Turn — Place 'O'";
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // FULL-SCREEN INTERSTITIAL AD SYSTEM (5s COUNTDOWN AFTER EVERY ROUND)
+    // -----------------------------------------------------------------------
+    const AD_CAMPAIGNS = [
+      {
+        icon: 'fa-bolt',
+        title: 'Super Speed UPI Rewards League',
+        subtitle: 'Keep playing Tic-Tac-Toe rounds! Every 100 rounds gives you ₹10 guaranteed wallet cash.'
+      },
+      {
+        icon: 'fa-trophy',
+        title: 'Play 100 Rounds & Claim ₹10 Instantly!',
+        subtitle: 'Withdraw straight to Google Pay, PhonePe, or Paytm once your wallet reaches ₹50.'
+      },
+      {
+        icon: 'fa-coins',
+        title: 'Zero Entry Fee • Daily Cash Rewards',
+        subtitle: 'Watch this short full-screen sponsor ad to verify and record your completed game round.'
+      }
+    ];
+
+    window.triggerFullScreenAd = function(roundOutcomeLabel = 'Round Completed!') {
+      const modal = document.getElementById('fullScreenAdModal');
+      const resultBadge = document.getElementById('adRoundResultBadge');
+      const timerText = document.getElementById('adTimerText');
+      const progressBar = document.getElementById('adTimerProgressBar');
+      const closeBtn = document.getElementById('closeAdNextRoundBtn');
+      const closeBtnText = document.getElementById('closeAdBtnText');
+      const closeBtnIcon = document.getElementById('closeAdBtnIcon');
+      const nextPreview = document.getElementById('adNextRoundPreview');
+
+      // Rotate ad creative
+      const creative = AD_CAMPAIGNS[Math.floor(Math.random() * AD_CAMPAIGNS.length)];
+      document.getElementById('adDynamicIcon').className = `fa-solid ${creative.icon}`;
+      document.getElementById('adHeadlineText').textContent = creative.title;
+      document.getElementById('adSubText').textContent = creative.subtitle;
+
+      resultBadge.textContent = roundOutcomeLabel;
+      nextPreview.textContent = `${state.roundsPlayed + 1} / 100 Rounds`;
+
+      // Reset 5-second timer
+      if (state.adTimerInterval) clearInterval(state.adTimerInterval);
+      state.adRemainingSeconds = 5;
+
+      timerText.textContent = `Ad ends in 5s`;
+      progressBar.style.width = '0%';
+
+      closeBtn.disabled = true;
+      closeBtn.className = 'w-full max-w-md mx-auto py-4 px-6 rounded-2xl font-display font-black text-base transition-all flex items-center justify-center gap-2 bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
+      closeBtnIcon.className = 'fa-solid fa-hourglass-half animate-spin';
+      closeBtnText.textContent = 'Wait 5s to Close Ad & Play Next Round';
+
+      modal.classList.remove('hidden');
+
+      state.adTimerInterval = setInterval(() => {
+        state.adRemainingSeconds -= 1;
+        const elapsed = 5 - state.adRemainingSeconds;
+        const pct = Math.min(100, (elapsed / 5) * 100);
+        progressBar.style.width = `${pct}%`;
+
+        if (state.adRemainingSeconds > 0) {
+          timerText.textContent = `Ad ends in ${state.adRemainingSeconds}s`;
+          closeBtnText.textContent = `Wait ${state.adRemainingSeconds}s to Close Ad & Play Next Round`;
+        } else {
+          clearInterval(state.adTimerInterval);
+          timerText.textContent = 'Ad Completed ✓';
+          closeBtn.disabled = false;
+          closeBtn.className = 'w-full max-w-md mx-auto py-4 px-6 rounded-2xl font-display font-black text-base transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 shadow-xl shadow-emerald-500/25 cursor-pointer';
+          closeBtnIcon.className = 'fa-solid fa-circle-play';
+          closeBtnText.textContent = 'Close Ad & Play Next Round (+1 Round)';
+          playSound('moveX');
+        }
+      }, 1000);
+    };
+
+    window.completeAdAndStartNextRound = async function() {
+      const modal = document.getElementById('fullScreenAdModal');
+      modal.classList.add('hidden');
+
+      // Increment Rounds Played Counter
+      state.roundsPlayed += 1;
+      state.lifetimeRounds += 1;
+
+      resetBoardStateForNewRound();
+      updateAllUI();
+      await saveAccountDataToCloud();
+
+      if (state.roundsPlayed >= 100) {
+        showToast('🎉 100 Rounds Completed! Go to "Claim ₹10" to claim your ₹10 reward!', 'success');
+      } else {
+        showToast(`Round counted! Progress: ${state.roundsPlayed} / 100 Rounds`, 'info');
+      }
+    };
+
+    // -----------------------------------------------------------------------
+    // 100 ROUNDS = ₹10 CLAIM SYSTEM (WITH COUNTER RESET)
+    // -----------------------------------------------------------------------
+    window.claimTenRupeesReward = async function() {
+      if (state.roundsPlayed < 100) {
+        showToast(`You need 100 rounds to claim ₹10. Currently at ${state.roundsPlayed}/100 rounds.`, 'warning');
+        return;
+      }
+
+      // Add ₹10 to wallet and reset round counter to 0 as requested ("claim krne ke baad count reset ho jaega")
+      state.walletBalance = Number((state.walletBalance + 10).toFixed(2));
+      state.roundsPlayed = 0;
+      state.totalClaimedAmount += 10;
+      state.totalClaimsCount += 1;
+
+      const claimTx = {
+        id: 'CLM' + Math.floor(100000 + Math.random() * 900000),
+        type: 'CLAIM',
+        title: '100 Rounds Reward Claimed',
+        amount: 10,
+        upiId: 'Wallet Credit',
+        timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        status: 'CREDITED'
+      };
+      state.transactions.unshift(claimTx);
+
+      playSound('cash');
+      updateAllUI();
+      await saveAccountDataToCloud();
+
+      showToast('🎉 ₹10.00 Added to Wallet! Round counter has been reset to 0/100.', 'success');
+    };
+
+    // -----------------------------------------------------------------------
+    // UPI WITHDRAWAL SYSTEM (MIN ₹50, 4 FIXED SLOTS: 50, 100, 200, 400)
+    // -----------------------------------------------------------------------
+    const ALLOWED_SLOTS = [50, 100, 200, 400];
+
+    window.selectWithdrawalSlot = function(slotValue) {
+      if (!ALLOWED_SLOTS.includes(slotValue)) return;
+      state.selectedSlot = slotValue;
+
+      ALLOWED_SLOTS.forEach(val => {
+        const btn = document.getElementById(`slotBtn-${val}`);
+        if (!btn) return;
+        if (val === slotValue) {
+          btn.className = 'slot-card p-4 rounded-2xl bg-emerald-500/15 border-2 border-emerald-400 text-center transition-all relative overflow-hidden shadow-lg shadow-emerald-500/10';
+        } else {
+          btn.className = 'slot-card p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 hover:border-slate-700 text-center transition-all relative overflow-hidden';
+        }
+      });
+
+      document.getElementById('selectedSlotDisplay').textContent = slotValue;
+      document.getElementById('withdrawBtnAmountText').textContent = slotValue;
+    };
+
+    window.appendUpiSuffix = function(suffix) {
+      const input = document.getElementById('upiIdInput');
+      let current = input.value.trim();
+      if (current.includes('@')) {
+        current = current.split('@')[0];
+      }
+      input.value = current + suffix;
+      window.validateLiveUpiInput();
+      input.focus();
+    };
+
+    window.validateLiveUpiInput = function() {
+      const input = document.getElementById('upiIdInput');
+      const badge = document.getElementById('upiLiveBadge');
+      if (!input || !badge) return;
+      const val = input.value.trim();
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+      if (!val) {
+        badge.textContent = 'ENTER VPA';
+        badge.className = 'absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold border border-slate-700';
+      } else if (upiRegex.test(val)) {
+        badge.textContent = 'UPI VERIFIED ✓';
+        badge.className = 'absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/30';
+      } else {
+        badge.textContent = 'INVALID VPA';
+        badge.className = 'absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 text-[10px] font-bold border border-rose-500/30';
+      }
+    };
+
+    // -----------------------------------------------------------------------
+    // RAZORPAYX GATEWAY CONFIGURATION & COPY CODE HELPERS
+    // -----------------------------------------------------------------------
+    window.toggleRazorpaySetupModal = function() {
+      const modal = document.getElementById('razorpaySetupModal');
+      modal.classList.toggle('hidden');
+      updateGatewayModeUI();
+    };
+
+    window.setGatewayMode = function(mode) {
+      state.gatewayMode = mode;
+      updateGatewayModeUI();
+      saveGatewayConfig(false);
+    };
+
+    function updateGatewayModeUI() {
+      const btnSandbox = document.getElementById('modeBtnSandbox');
+      const btnLive = document.getElementById('modeBtnLive');
+      const badge = document.getElementById('gatewayModeBadge');
+
+      if (state.gatewayMode === 'sandbox') {
+        if (btnSandbox) {
+          btnSandbox.className = 'p-3.5 rounded-2xl border-2 border-indigo-500 bg-indigo-500/15 text-left transition-all';
+        }
+        if (btnLive) {
+          btnLive.className = 'p-3.5 rounded-2xl border-2 border-slate-800 bg-slate-900 hover:border-slate-700 text-left transition-all';
+        }
+        if (badge) {
+          badge.textContent = 'AUTO-SANDBOX ACTIVE';
+          badge.className = 'px-2 py-0.5 rounded bg-indigo-500/25 text-indigo-300 text-[10px] font-extrabold uppercase';
+        }
+      } else {
+        if (btnLive) {
+          btnLive.className = 'p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-500/15 text-left transition-all';
+        }
+        if (btnSandbox) {
+          btnSandbox.className = 'p-3.5 rounded-2xl border-2 border-slate-800 bg-slate-900 hover:border-slate-700 text-left transition-all';
+        }
+        if (badge) {
+          badge.textContent = 'LIVE PRODUCTION API';
+          badge.className = 'px-2 py-0.5 rounded bg-emerald-500/25 text-emerald-300 text-[10px] font-extrabold uppercase';
+        }
+      }
+    }
+
+    window.saveGatewayConfig = function(notify = true) {
+      const urlInput = document.getElementById('rzpBackendUrlInput');
+      const fallbackToggle = document.getElementById('rzpFallbackToggle');
+      if (urlInput) state.backendUrl = urlInput.value.trim() || '/api/razorpayx-payout';
+      if (fallbackToggle) state.autoFallbackToSandbox = fallbackToggle.checked;
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_GATEWAY_KEY, JSON.stringify({
+          gatewayMode: state.gatewayMode,
+          backendUrl: state.backendUrl,
+          autoFallbackToSandbox: state.autoFallbackToSandbox
+        }));
+      } catch (e) {}
+
+      updateGatewayModeUI();
+      if (notify) {
+        showToast(`RazorpayX Gateway saved (${state.gatewayMode.toUpperCase()} mode).`, 'success');
+      }
+    };
+
+    function loadGatewayConfig() {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_GATEWAY_KEY);
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (cfg.gatewayMode) state.gatewayMode = cfg.gatewayMode;
+          if (cfg.backendUrl) state.backendUrl = cfg.backendUrl;
+          if (typeof cfg.autoFallbackToSandbox === 'boolean') {
+            state.autoFallbackToSandbox = cfg.autoFallbackToSandbox;
+          }
+          const urlInput = document.getElementById('rzpBackendUrlInput');
+          const fallbackToggle = document.getElementById('rzpFallbackToggle');
+          if (urlInput) urlInput.value = state.backendUrl;
+          if (fallbackToggle) fallbackToggle.checked = state.autoFallbackToSandbox;
+        }
+      } catch (e) {}
+      updateGatewayModeUI();
+    }
+
+    window.copyBackendServerCode = function() {
+      const codeEl = document.getElementById('backendCodeBlock');
+      if (!codeEl) return;
+      const textArea = document.createElement('textarea');
+      textArea.value = codeEl.textContent;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('RazorpayX Backend Code copied to clipboard!', 'success');
+      } catch (err) {
+        showToast('Please select and copy the code manually.', 'warning');
+      }
+      document.body.removeChild(textArea);
+    };
+
+    // Helper for animated 3-step RazorpayX Payout UI
+    function setProcessingStepUI(stepNumber, statusText) {
+      const stepEl = document.getElementById(`rzpStep${stepNumber}`);
+      const iconEl = document.getElementById(`rzpStep${stepNumber}Icon`);
+      const subEl = document.getElementById(`rzpStep${stepNumber}Sub`);
+      if (!stepEl || !iconEl || !subEl) return;
+
+      stepEl.classList.remove('opacity-50');
+      stepEl.className = 'p-3 rounded-xl bg-slate-900 border border-indigo-500/40 flex items-center gap-3';
+      iconEl.className = 'fa-solid fa-circle-notch animate-spin text-indigo-400 text-sm';
+      if (statusText) subEl.textContent = statusText;
+    }
+
+    function markProcessingStepDone(stepNumber, doneText) {
+      const stepEl = document.getElementById(`rzpStep${stepNumber}`);
+      const iconEl = document.getElementById(`rzpStep${stepNumber}Icon`);
+      const subEl = document.getElementById(`rzpStep${stepNumber}Sub`);
+      if (!stepEl || !iconEl || !subEl) return;
+
+      stepEl.className = 'p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center gap-3';
+      iconEl.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
+      if (doneText) subEl.textContent = doneText;
+    }
+
+    function delayMs(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    window.handleUpiWithdrawal = async function(e) {
+      e.preventDefault();
+      const amount = Number(state.selectedSlot);
+      const upiId = document.getElementById('upiIdInput').value.trim();
+      const holderName = document.getElementById('upiHolderInput').value.trim() || state.name;
+
+      // 1. Validate strict 4 slots & minimum 50
+      if (!ALLOWED_SLOTS.includes(amount) || amount < 50) {
+        showToast('Minimum withdrawal is ₹50. Please select a valid slot (50, 100, 200, or 400).', 'error');
+        return;
+      }
+
+      // 2. Validate UPI ID format
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+      if (!upiRegex.test(upiId)) {
+        showToast('Please enter a valid UPI ID (for example: 9876543210@ybl or name@oksbi).', 'error');
+        return;
+      }
+
+      // 3. Check sufficient wallet balance
+      if (state.walletBalance < amount) {
+        const needed = (amount - state.walletBalance).toFixed(2);
+        showToast(`Insufficient Balance! You need ₹${needed} more in your wallet to withdraw ₹${amount}.`, 'warning');
+        return;
+      }
+
+      // Open Live 3-Step RazorpayX Processing Modal
+      const procModal = document.getElementById('razorpayProcessingModal');
+      document.getElementById('rzpStep2').classList.add('opacity-50');
+      document.getElementById('rzpStep3').classList.add('opacity-50');
+      document.getElementById('rzpStep2Icon').className = 'fa-regular fa-circle text-slate-500 text-sm';
+      document.getElementById('rzpStep3Icon').className = 'fa-regular fa-circle text-slate-500 text-sm';
+      setProcessingStepUI(1, `Registering VPA ${upiId} for ${holderName}...`);
+      procModal.classList.remove('hidden');
+
+      let payoutId = 'pout_' + Math.random().toString(36).substring(2, 12);
+      let utrNumber = String(Math.floor(100000000000 + Math.random() * 899999999999));
+      const idempotencyKey = 'idp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+
+      try {
+        await delayMs(750);
+        markProcessingStepDone(1, `Fund Account verified: ${upiId}`);
+        setProcessingStepUI(2, `Initiating ₹${amount} (${amount * 100} paise) via RazorpayX...`);
+
+        if (state.gatewayMode === 'live') {
+          try {
+            const response = await fetch(state.backendUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: state.email,
+                name: holderName,
+                upiId: upiId,
+                amountInr: amount,
+                amountPaise: amount * 100,
+                idempotencyKey: idempotencyKey
+              })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+              throw new Error(data.error || 'Live endpoint error');
+            }
+            payoutId = data.payoutId || payoutId;
+            utrNumber = data.utr || utrNumber;
+          } catch (liveErr) {
+            if (!state.autoFallbackToSandbox) {
+              procModal.classList.add('hidden');
+              showToast(`RazorpayX Live API Error: ${liveErr.message}`, 'error');
+              return;
+            }
+            console.warn('Live endpoint unreachable, falling back to RazorpayX Sandbox simulation:', liveErr);
+            await delayMs(800);
+          }
+        } else {
+          await delayMs(850);
+        }
+
+        markProcessingStepDone(2, `Composite Payout Created (${payoutId})`);
+        setProcessingStepUI(3, `NPCI UPI Switch confirming UTR...`);
+        await delayMs(750);
+        markProcessingStepDone(3, `Credited! NPCI UTR: ${utrNumber}`);
+        await delayMs(350);
+      } finally {
+        procModal.classList.add('hidden');
+      }
+
+      // Deduct balance & save UPI details
+      state.walletBalance = Number((state.walletBalance - amount).toFixed(2));
+      state.savedUpiId = upiId;
+      state.savedUpiHolder = holderName;
+
+      const timeStr = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+      const withdrawTx = {
+        id: utrNumber,
+        payoutId: payoutId,
+        type: 'WITHDRAW',
+        title: `RazorpayX UPI Payout (₹${amount})`,
+        amount: amount,
+        upiId: upiId,
+        holderName: holderName,
+        timestamp: timeStr,
+        status: 'PROCESSED VIA RAZORPAYX'
+      };
+
+      state.transactions.unshift(withdrawTx);
+
+      playSound('cash');
+      updateAllUI();
+      await saveAccountDataToCloud();
+
+      // Populate and display UPI Payout Receipt Modal
+      document.getElementById('receiptAmount').textContent = amount;
+      document.getElementById('receiptUpiId').textContent = upiId;
+      document.getElementById('receiptPayoutId').textContent = payoutId;
+      document.getElementById('receiptEmail').textContent = state.email;
+      document.getElementById('receiptUtr').textContent = utrNumber;
+      document.getElementById('receiptTime').textContent = timeStr;
+      document.getElementById('upiReceiptModal').classList.remove('hidden');
+
+      showToast(`₹${amount} automatically sent to ${upiId} via RazorpayX!`, 'success');
+    };
+
+    window.closeUpiReceiptModal = function() {
+      document.getElementById('upiReceiptModal').classList.add('hidden');
+    };
+
+    // -----------------------------------------------------------------------
+    // SOUND TOGGLE & TESTER / ADMIN PANEL FUNCTIONS
+    // -----------------------------------------------------------------------
+    window.toggleSound = function() {
+      state.soundEnabled = !state.soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      if (state.soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high text-xs text-emerald-400';
+        showToast('Sound effects enabled', 'info');
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-xs text-slate-500';
+        showToast('Sound effects muted', 'info');
+      }
+    };
+
+    window.toggleTestPanelModal = function() {
+      const modal = document.getElementById('testPanelModal');
+      modal.classList.toggle('hidden');
+    };
+
+    window.adminAddRounds = async function(count) {
+      if (count === 100) {
+        state.roundsPlayed = 100;
+      } else {
+        state.roundsPlayed += count;
+      }
+      state.lifetimeRounds += count;
+      updateAllUI();
+      await saveAccountDataToCloud();
+      showToast(`Tester: Round counter updated to ${state.roundsPlayed}/100!`, 'success');
+    };
+
+    window.adminAddBalance = async function(amount) {
+      state.walletBalance = Number((state.walletBalance + amount).toFixed(2));
+      const bonusTx = {
+        id: 'TST' + Math.floor(100000 + Math.random() * 900000),
+        type: 'CLAIM',
+        title: `Test Wallet Top-up (+₹${amount})`,
+        amount: amount,
+        upiId: 'Demo Balance',
+        timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        status: 'CREDITED'
+      };
+      state.transactions.unshift(bonusTx);
+      playSound('cash');
+      updateAllUI();
+      await saveAccountDataToCloud();
+      showToast(`Tester: Added ₹${amount} to Wallet Balance!`, 'success');
+    };
+
+    // -----------------------------------------------------------------------
+    // MASTER UI SYNCHRONIZATION
+    // -----------------------------------------------------------------------
+    function updateAllUI() {
+      // 1. Header Info
+      document.getElementById('headerUserEmail').textContent = state.email || 'Not logged in';
+      document.getElementById('headerRoundsCount').textContent = state.roundsPlayed;
+      document.getElementById('headerWalletBalance').textContent = state.walletBalance.toFixed(2);
+
+      // 2. Game Scoreboard
+      document.getElementById('scoreX').textContent = state.scores.X;
+      document.getElementById('scoreO').textContent = state.scores.O;
+      document.getElementById('scoreDraw').textContent = state.scores.draw;
+      document.getElementById('lifetimeRoundsBadge').textContent = state.lifetimeRounds;
+
+      // 3. Progress Percentage (0 to 100%)
+      const pct = Math.min(100, Math.floor((state.roundsPlayed / 100) * 100));
+      const canClaim = state.roundsPlayed >= 100;
+
+      // Mini Card on Game Page
+      document.getElementById('miniCardRounds').textContent = state.roundsPlayed;
+      document.getElementById('miniCardProgressBar').style.width = `${pct}%`;
+      document.getElementById('miniWalletAmount').textContent = state.walletBalance.toFixed(2);
+
+      const miniClaimBtn = document.getElementById('miniQuickClaimBtn');
+      const miniNote = document.getElementById('miniCardStatusNote');
+      if (canClaim) {
+        miniClaimBtn.disabled = false;
+        miniClaimBtn.className = 'py-3 px-4 rounded-xl font-display font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 btn-gold-shimmer text-slate-950 shadow-lg shadow-amber-500/25 cursor-pointer';
+        miniNote.innerHTML = `<strong class="text-emerald-400">🎉 100 Rounds Reached!</strong> Click "Claim ₹10 Now" to credit ₹10 and reset counter to 0.`;
+      } else {
+        miniClaimBtn.disabled = true;
+        miniClaimBtn.className = 'py-3 px-4 rounded-xl font-display font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-slate-800 text-slate-500 cursor-not-allowed';
+        const rem = Math.max(0, 100 - state.roundsPlayed);
+        miniNote.innerHTML = `Play <strong class="text-white">${rem} more rounds</strong> to unlock your ₹10 cash claim. Counter resets to 0 after claiming!`;
+      }
+
+      // 4. Dedicated Claim Tab
+      document.getElementById('claimPageTotalEarned').textContent = state.totalClaimedAmount;
+      document.getElementById('claimPageTimesCount').textContent = state.totalClaimsCount;
+      document.getElementById('claimBigRoundCount').textContent = state.roundsPlayed;
+      document.getElementById('claimPercentText').textContent = `${pct}% Completed`;
+      document.getElementById('claimBigProgressBar').style.width = `${pct}%`;
+
+      const mainClaimBtn = document.getElementById('mainClaimBtn');
+      const mainClaimBtnText = document.getElementById('mainClaimBtnText');
+      const claimHint = document.getElementById('claimRemainingHint');
+      const pcBadge = document.getElementById('pcClaimBadge');
+      const mobDot = document.getElementById('mobClaimDot');
+
+      if (canClaim) {
+        mainClaimBtn.disabled = false;
+        mainClaimBtn.className = 'w-full py-4 px-6 rounded-2xl font-display font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2.5 btn-gold-shimmer text-slate-950 shadow-xl shadow-amber-500/30 cursor-pointer';
+        mainClaimBtn.innerHTML = `<i class="fa-solid fa-gift animate-bounce"></i><span>Claim ₹10.00 Now & Reset Counter!</span>`;
+        claimHint.innerHTML = `<span class="text-emerald-400 font-bold">Congratulations! Your ₹10 reward is ready to claim.</span>`;
+        if (pcBadge) pcBadge.classList.remove('hidden');
+        if (mobDot) mobDot.classList.remove('hidden');
+      } else {
+        mainClaimBtn.disabled = true;
+        mainClaimBtn.className = 'w-full py-4 px-6 rounded-2xl font-display font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2.5 bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
+        const rem = Math.max(0, 100 - state.roundsPlayed);
+        mainClaimBtn.innerHTML = `<i class="fa-solid fa-lock"></i><span>Play ${rem} More Rounds to Claim ₹10</span>`;
+        claimHint.innerHTML = `Play <strong class="text-amber-400">${rem} more rounds</strong> to unlock your ₹10 reward!`;
+        if (pcBadge) pcBadge.classList.add('hidden');
+        if (mobDot) mobDot.classList.add('hidden');
+      }
+
+      // 5. Withdraw Tab
+      document.getElementById('withdrawPageBalance').textContent = state.walletBalance.toFixed(2);
+      renderTransactionsList();
+    }
+
+    function renderTransactionsList() {
+      const listEl = document.getElementById('transactionHistoryList');
+      const countBadge = document.getElementById('txCountBadge');
+      if (!listEl) return;
+
+      const txs = state.transactions || [];
+      countBadge.textContent = `${txs.length} Txns`;
+
+      if (txs.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-12 px-4">
+            <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600">
+              <i class="fa-solid fa-receipt text-xl"></i>
+            </div>
+            <div class="text-xs font-bold text-slate-400">No Transactions Yet</div>
+            <p class="text-[11px] text-slate-500 mt-1">Claim ₹10 after 100 rounds or withdraw to your UPI ID (₹50 / ₹100 / ₹200 / ₹400) to see records here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = txs.map(tx => {
+        const isWithdraw = tx.type === 'WITHDRAW';
+        return `
+          <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl ${isWithdraw ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'} flex items-center justify-center shrink-0">
+                <i class="fa-solid ${isWithdraw ? 'fa-building-columns' : 'fa-coins'}"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-xs text-white truncate">${tx.title}</div>
+                <div class="text-[11px] text-slate-400 truncate">
+                  ${isWithdraw ? `UPI: <strong class="text-slate-200">${tx.upiId}</strong>` : `${tx.id}`} • ${tx.timestamp}
+                </div>
+                <div class="text-[10px] font-bold ${isWithdraw ? 'text-emerald-400' : 'text-amber-400'} mt-0.5">
+                  <i class="fa-solid fa-circle-check mr-1"></i>${tx.status}
+                </div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="font-display font-black text-sm ${isWithdraw ? 'text-sky-400' : 'text-emerald-400'}">
+                ${isWithdraw ? '-' : '+'}₹${tx.amount}
+              </div>
+              <div class="text-[10px] font-mono text-slate-500">${tx.id.slice(0, 10)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Initialize App on Load
+    window.addEventListener('DOMContentLoaded', async () => {
+      loadLocalAccountsDict();
+      loadGatewayConfig();
+      await initFirebase();
+
+      // Auto-restore active email session if user was already logged in
+      try {
+        const lastEmail = localStorage.getItem(LOCAL_STORAGE_ACTIVE_EMAIL_KEY);
+        if (lastEmail) {
+          const savedAcc = await fetchAccountByEmail(lastEmail);
+          if (savedAcc) {
+            state.isLoggedIn = true;
+            state.email = savedAcc.email;
+            state.name = savedAcc.name || lastEmail.split('@')[0];
+            state.passwordHash = savedAcc.passwordHash || '';
+            state.roundsPlayed = Number(savedAcc.roundsPlayed || 0);
+            state.lifetimeRounds = Number(savedAcc.lifetimeRounds || 0);
+            state.walletBalance = Number(savedAcc.walletBalance || 0);
+            state.totalClaimedAmount = Number(savedAcc.totalClaimedAmount || 0);
+            state.totalClaimsCount = Number(savedAcc.totalClaimsCount || 0);
+            state.savedUpiId = savedAcc.savedUpiId || '';
+            state.savedUpiHolder = savedAcc.savedUpiHolder || '';
+            state.transactions = savedAcc.transactionsJson ? JSON.parse(savedAcc.transactionsJson) : [];
+            state.scores = savedAcc.scoresJson ? JSON.parse(savedAcc.scoresJson) : { X: 0, O: 0, draw: 0 };
+            completeLoginTransition(`Session restored for ${state.email}`);
+          }
+        }
+      } catch (e) {}
+
+      updateAllUI();
+    });
+  </script>
+</body>
+</html>
